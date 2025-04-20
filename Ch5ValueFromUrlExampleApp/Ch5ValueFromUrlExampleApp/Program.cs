@@ -1,6 +1,8 @@
 var builder = WebApplication.CreateBuilder();
 var app = builder.Build();
 
+//app.UseExceptionHandler("/error");
+
 var people = new List<Person>
 {
     new("Tom", "Hanks"),
@@ -13,9 +15,19 @@ var people = new List<Person>
 
 app.MapGet("/person/{name}", (string name) =>
 {
-    return people.FindAll((person) => person.FirstName.Contains(name));
+    //throw new Exception("Test get error");
+    return people.FindAll((person) => person.FirstName.Contains(name, StringComparison.CurrentCultureIgnoreCase));
+});
+app.MapPost("/person/{name}", (string name) =>
+{
+    //throw new Exception("Test post error");
+    people.Add(new(name, string.Empty));
 });
 
+app.Map("/error", () =>
+{
+    return "An error occurred";
+});
 
 app.Run();
 
