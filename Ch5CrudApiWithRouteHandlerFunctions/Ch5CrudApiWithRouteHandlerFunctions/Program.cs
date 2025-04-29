@@ -45,6 +45,7 @@ app.MapDelete("/fruit/{id}", (string id) =>
 });
 
 // Endpoint with a manually defined response, i.e., created without TypedResults or Results
+// The framework knows to inject HttpResponse rather than attempting to deserialize it from the route or the request body
 app.MapGet("/teapot", (HttpResponse response) =>
 {
     // Doesn't have a constant for 418 :(
