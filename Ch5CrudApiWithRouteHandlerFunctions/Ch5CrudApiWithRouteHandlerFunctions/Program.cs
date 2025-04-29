@@ -19,16 +19,19 @@ app.MapGet("/fruit/{id}", (string id) =>
 {
     return fruitCollection.TryGetValue(id, out var fruit)
         ? TypedResults.Ok(fruit)
-        // Can't use TypedResults.NotFound here or it complains the about the handler signature -- why?
-        : Results.NotFound();
+        // Generates a standard ProblemDetails response with a 404 status code
+        : Results.Problem(statusCode: 404);
 });
 
 app.MapPost("/fruit/{id}", (string id, Fruit fruit) =>
 {
     return fruitCollection.TryAdd(id, fruit)
         ? TypedResults.Created($"/fruit/{id}", fruit)
-        // Can't use TypedResults.NotFound here, either. Maybe TypedResults works only if you're returning a value (but we're returning an error object)
-        : Results.BadRequest(new { id = "A fruit with this ID already exists." });
+        // Generates a ProblemDetails response with validation errors in a standard format
+        : Results.ValidationProblem(new Dictionary<string, string[]>()
+        {
+            { "id", ["A fruit with this ID already exists." ] },
+        });
 });
 
 app.MapPut("/fruit/{id}", (string id, Fruit fruit) =>
