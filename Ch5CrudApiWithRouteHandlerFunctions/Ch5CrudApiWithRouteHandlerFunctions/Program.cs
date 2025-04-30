@@ -1,20 +1,30 @@
 using System.Collections.Concurrent;
 using System.Net.Mime;
 
+// CHANGES THE ENVIRONMENT
+Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+
 var builder = WebApplication.CreateBuilder(args);
+// Add a service that implements IProblemDetails to support creating ProblemDetails responses when an exception is thrown
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    // When used without a path and when an IProblemDetails service has been injected, exceptions caught by this middleware will be converted into ProblemDetails responses
+    app.UseExceptionHandler();
+}
+
+// Converts any error responses without a body to ProblemDetails responses
+// Exceptions will still be caught by exception handler middleware added by UseExceptionHandler (and converted into ProblemDetails responses since IProblemDetails has been injected)
+app.UseStatusCodePages();
 
 var fruitCollection = new ConcurrentDictionary<string, Fruit>();
 
-// Lambda handler
 app.MapGet("/fruit", () => fruitCollection);
 
-//var getFruit = (string id) =>
-//{
-//    return Fruit.All[id];
-//};
-
-// The name of the parameter in the handler must match the name of the route param, otherwise an exception occurs when tring to match the request to a endpoint
+// The name of the parameter in the handler must match the name of the route parameter, otherwise an exception occurs when trying to match the request to a endpoint
 app.MapGet("/fruit/{id}", (string id) =>
 {
     return fruitCollection.TryGetValue(id, out var fruit)
@@ -55,6 +65,16 @@ app.MapGet("/teapot", (HttpResponse response) =>
     response.StatusCode = 418;
     response.ContentType = MediaTypeNames.Text.Plain;
     return response.WriteAsync("I'm a teapot.");
+});
+
+app.MapGet("/error", () =>
+{
+    throw new Exception("Test exception");
+});
+
+app.MapGet("/missing", () =>
+{
+    return Results.NotFound();
 });
 
 app.Run();
