@@ -31,7 +31,7 @@ app.MapGet("/fruit/{id}", (string id) =>
         ? TypedResults.Ok(fruit)
         // Generates a standard ProblemDetails response with a 404 status code
         : Results.Problem(statusCode: 404);
-});
+}).AddEndpointFilter(ValidationHelper.ValidateId);
 
 app.MapPost("/fruit/{id}", (string id, Fruit fruit) =>
 {
@@ -82,6 +82,24 @@ app.Run();
 internal record Fruit(string Name, int Stock)
 {
     public static readonly Dictionary<string, Fruit> All = [];
+}
+
+internal static class ValidationHelper
+{
+    internal static async ValueTask<object?> ValidateId(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var id = context.GetArgument<string>(0);
+
+        if (string.IsNullOrWhiteSpace(id) || !id.StartsWith('f'))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>()
+            {
+                { "id", ["Invalid ID format. ID must start with 'f'"] },
+            });
+        }
+
+        return await next(context);
+    }
 }
 
 // Thee fruit parameters will be retrieved by deserializing the JSON body of the request
