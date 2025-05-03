@@ -2,14 +2,24 @@ using System.Collections.Concurrent;
 using System.Net.Mime;
 
 // CHANGES THE ENVIRONMENT
-Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+//Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
 
 var builder = WebApplication.CreateBuilder(args);
 // Add a service that implements IProblemDetails to support creating ProblemDetails responses when an exception is thrown
 builder.Services.AddProblemDetails();
+builder.Services.AddHttpLogging((options) =>
+{
+});
 
 var app = builder.Build();
 
+//Development middleware
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpLogging();
+}
+
+// Non-development middleware
 if (!app.Environment.IsDevelopment())
 {
     // When used without a path and when an IProblemDetails service has been injected, exceptions caught by this middleware will be converted into ProblemDetails responses
@@ -31,7 +41,14 @@ app.MapGet("/fruit/{id}", (string id) =>
         ? TypedResults.Ok(fruit)
         // Generates a standard ProblemDetails response with a 404 status code
         : Results.Problem(statusCode: 404);
-}).AddEndpointFilter(ValidationHelper.ValidateId);
+}).AddEndpointFilter(ValidationHelper.ValidateId).AddEndpointFilter(async (context, next) =>
+{
+    // Filter is "re-executed" for the outgoing response only if the filter has code after the next(context) call; there's no mechanism that automatically reinvokes the filter with the response
+    app.Logger.LogInformation("Executing logging filter...");
+    var result = await next(context);
+    app.Logger.LogInformation("Result from handler: {result}", result);
+    return result;
+});
 
 app.MapPost("/fruit/{id}", (string id, Fruit fruit) =>
 {
@@ -42,20 +59,20 @@ app.MapPost("/fruit/{id}", (string id, Fruit fruit) =>
         {
             { "id", ["A fruit with this ID already exists." ] },
         });
-});
+}).AddEndpointFilter(ValidationHelper.ValidateId);
 
 app.MapPut("/fruit/{id}", (string id, Fruit fruit) =>
 {
     fruitCollection[id] = fruit;
     return Results.NoContent();
-});
+}).AddEndpointFilter(ValidationHelper.ValidateId);
 
 app.MapDelete("/fruit/{id}", (string id) =>
 {
     return fruitCollection.TryRemove(id, out var fruit)
         ? Results.NoContent()
         : Results.BadRequest(new { id = $"No fruit exists with the {id}" });
-});
+}).AddEndpointFilter(ValidationHelper.ValidateId);
 
 // Endpoint with a manually defined response, i.e., created without TypedResults or Results
 // The framework knows to inject HttpResponse rather than attempting to deserialize it from the route or the request body
