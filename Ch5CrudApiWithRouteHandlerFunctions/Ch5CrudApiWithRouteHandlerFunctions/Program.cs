@@ -51,6 +51,9 @@ fruitIdGroup.MapGet("/", (string id) =>
         : Results.Problem(statusCode: 404);
 });
 
+// Thee fruit parameters will be retrieved by deserializing the JSON body of the request
+// This happens because there's no route parameter that could fulfil them; they're complex types
+// Only a single parameter can be bound to the request body
 fruitIdGroup.MapPost("/", (Fruit fruit, string id) =>
 {
     return fruitCollection.TryAdd(id, fruit)
@@ -133,28 +136,3 @@ internal static class ValidationHelper
         }
     }
 }
-
-// Thee fruit parameters will be retrieved by deserializing the JSON body of the request
-// This happens because there's no route parameter that could fulfil them; they're complex types
-// Only a single parameter can be bound to the request body
-//internal class Handlers
-//{
-//    public void ReplaceFruit(string id, Fruit fruit)
-//    {
-//        Fruit.All[id] = fruit;
-//    }
-
-//    public static void AddFruit(string id, Fruit fruit)
-//    {
-//        Fruit.All.Add(id, fruit);
-//    }
-//}
-
-//.AddEndpointFilter(async (context, next) =>
-//{
-//    // Filter is "re-executed" for the outgoing response only if the filter has code after the next(context) call; there's no mechanism that automatically reinvokes the filter with the response
-//    app.Logger.LogInformation("Executing logging filter...");
-//    var result = await next(context);
-//    app.Logger.LogInformation("Result from handler: {result}", result);
-//    return result;
-//});
