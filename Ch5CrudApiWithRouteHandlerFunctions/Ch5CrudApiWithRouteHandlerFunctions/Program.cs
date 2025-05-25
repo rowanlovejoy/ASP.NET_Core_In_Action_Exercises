@@ -32,18 +32,26 @@ app.UseStatusCodePages();
 
 var fruitCollection = new ConcurrentDictionary<string, Fruit>();
 
-app.MapGet("/fruit", () => fruitCollection);
+// Create a group that adds the fruit prefix
+var fruitGroup = app.MapGroup("/fruit");
+
+// Created a nested group that adds the "id" router parameter; it will be available to all endpoints nested in this group, if their path prefixes don't specify it
+// NB Changes to groups, paths, and route parameters don't seem to be applied by hot-reload; you have to restart the entire app to have them take effect
+var fruitIdGroup = fruitGroup.MapGroup("/{id}")
+    .AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
+
+fruitGroup.MapGet("/fruit", () => fruitCollection);
 
 // The name of the parameter in the handler must match the name of the route parameter, otherwise an exception occurs when trying to match the request to a endpoint
-app.MapGet("/fruit/{id}", (string id) =>
+fruitIdGroup.MapGet("/", (string id) =>
 {
     return fruitCollection.TryGetValue(id, out var fruit)
         ? TypedResults.Ok(fruit)
         // Generates a standard ProblemDetails response with a 404 status code
         : Results.Problem(statusCode: 404);
-}).AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
+});
 
-app.MapPost("/fruit/{id}", (string id, Fruit fruit) =>
+fruitIdGroup.MapPost("/", (Fruit fruit, string id) =>
 {
     return fruitCollection.TryAdd(id, fruit)
         ? TypedResults.Created($"/fruit/{id}", fruit)
@@ -52,21 +60,20 @@ app.MapPost("/fruit/{id}", (string id, Fruit fruit) =>
         {
             { "id", ["A fruit with this ID already exists." ] },
         });
-}).AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
+});
 
-// Swap parameter order to demonstrate filter factory advantage
-app.MapPut("/fruit/{id}", (Fruit fruit, string id) =>
+fruitIdGroup.MapPut("/", (Fruit fruit, string id) =>
 {
     fruitCollection[id] = fruit;
     return Results.NoContent();
-}).AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
+});
 
-app.MapDelete("/fruit/{id}", (string id) =>
+fruitIdGroup.MapDelete("/", (string id) =>
 {
     return fruitCollection.TryRemove(id, out var fruit)
         ? Results.NoContent()
         : Results.BadRequest(new { id = $"No fruit exists with the {id}" });
-}).AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
+});
 
 // Endpoint with a manually defined response, i.e., created without TypedResults or Results
 // The framework knows to inject HttpResponse rather than attempting to deserialize it from the route or the request body
@@ -95,6 +102,8 @@ internal record Fruit(string Name, int Stock)
     public static readonly Dictionary<string, Fruit> All = [];
 }
 
+// It's also possible to implement a filter as a class implementing the IEndpointFilter endpoint
+// This is standard filter, not filter factory, however; there's no class-based equivalent for the filer factory
 internal static class ValidationHelper
 {
     internal static EndpointFilterDelegate ValidateIdFactory(EndpointFilterFactoryContext factoryContext, EndpointFilterDelegate next)
