@@ -41,14 +41,7 @@ app.MapGet("/fruit/{id}", (string id) =>
         ? TypedResults.Ok(fruit)
         // Generates a standard ProblemDetails response with a 404 status code
         : Results.Problem(statusCode: 404);
-}).AddEndpointFilter(ValidationHelper.ValidateId).AddEndpointFilter(async (context, next) =>
-{
-    // Filter is "re-executed" for the outgoing response only if the filter has code after the next(context) call; there's no mechanism that automatically reinvokes the filter with the response
-    app.Logger.LogInformation("Executing logging filter...");
-    var result = await next(context);
-    app.Logger.LogInformation("Result from handler: {result}", result);
-    return result;
-});
+}).AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
 
 app.MapPost("/fruit/{id}", (string id, Fruit fruit) =>
 {
@@ -59,20 +52,21 @@ app.MapPost("/fruit/{id}", (string id, Fruit fruit) =>
         {
             { "id", ["A fruit with this ID already exists." ] },
         });
-}).AddEndpointFilter(ValidationHelper.ValidateId);
+}).AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
 
-app.MapPut("/fruit/{id}", (string id, Fruit fruit) =>
+// Swap parameter order to demonstrate filter factory advantage
+app.MapPut("/fruit/{id}", (Fruit fruit, string id) =>
 {
     fruitCollection[id] = fruit;
     return Results.NoContent();
-}).AddEndpointFilter(ValidationHelper.ValidateId);
+}).AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
 
 app.MapDelete("/fruit/{id}", (string id) =>
 {
     return fruitCollection.TryRemove(id, out var fruit)
         ? Results.NoContent()
         : Results.BadRequest(new { id = $"No fruit exists with the {id}" });
-}).AddEndpointFilter(ValidationHelper.ValidateId);
+}).AddEndpointFilterFactory(ValidationHelper.ValidateIdFactory);
 
 // Endpoint with a manually defined response, i.e., created without TypedResults or Results
 // The framework knows to inject HttpResponse rather than attempting to deserialize it from the route or the request body
@@ -103,19 +97,31 @@ internal record Fruit(string Name, int Stock)
 
 internal static class ValidationHelper
 {
-    internal static async ValueTask<object?> ValidateId(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    internal static EndpointFilterDelegate ValidateIdFactory(EndpointFilterFactoryContext factoryContext, EndpointFilterDelegate next)
     {
-        var id = context.GetArgument<string>(0);
+        // The factory function itself is executed once on startup for each endpoint its registered on; when handling requests, only the filter fuctions returned from the factory will be executed
+        var idIndex = Array.FindIndex(
+            factoryContext.MethodInfo.GetParameters(),
+            parameter => parameter.Name == "id" && parameter.ParameterType == typeof(string));
 
-        if (string.IsNullOrWhiteSpace(id) || !id.StartsWith('f'))
+        return int.IsPositive(idIndex) ? idFilter : next;
+
+        async ValueTask<object?> idFilter(EndpointFilterInvocationContext invocationContext)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>()
-            {
-                { "id", ["Invalid ID format. ID must start with 'f'"] },
-            });
-        }
+            var id = invocationContext.GetArgument<string>(idIndex);
 
-        return await next(context);
+            if (string.IsNullOrWhiteSpace(id) || !id.StartsWith('f'))
+            {
+                var problem = new Dictionary<string, string[]>()
+                {
+                    { "id", ["Invalid ID format. ID must start with 'f'"] },
+                };
+
+                return Results.ValidationProblem(problem);
+            }
+
+            return await next(invocationContext);
+        }
     }
 }
 
@@ -134,3 +140,12 @@ internal static class ValidationHelper
 //        Fruit.All.Add(id, fruit);
 //    }
 //}
+
+//.AddEndpointFilter(async (context, next) =>
+//{
+//    // Filter is "re-executed" for the outgoing response only if the filter has code after the next(context) call; there's no mechanism that automatically reinvokes the filter with the response
+//    app.Logger.LogInformation("Executing logging filter...");
+//    var result = await next(context);
+//    app.Logger.LogInformation("Result from handler: {result}", result);
+//    return result;
+//});
