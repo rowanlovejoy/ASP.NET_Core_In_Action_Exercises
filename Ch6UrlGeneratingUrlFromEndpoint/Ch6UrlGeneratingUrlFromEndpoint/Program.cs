@@ -29,17 +29,25 @@ app.MapGet("links", (LinkGenerator linkGenerator) =>
 
 // Use a catch all parameter to bind to the remainder of the URL after matching "redirect/", including any forward slashes that would otherwise delimit route parts
 // {**<part_name>} preserves -- "round trips" -- forward slashes without URL encoding; {*<part_name>} URL encodes forward slashes
-app.MapGet("redirect/{**route}", (string route) =>
+app.MapGet("redirect/{**route}", (string route, LinkGenerator linkGenerator) =>
 {
     var routeParts = route.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
     // Use a collection pattern to a match an array with exactly two elements where the first is product
     if (routeParts is ["product", var name])
     {
-        // Redirects to the named "product", passing in the retrieved product name
-        return Results.RedirectToRoute(routeParts[0], new { name });
+        // Generate a URL to the "product" endpoint, passing in the retrieved product name
+        if (linkGenerator.GetPathByName("product", new { name }) is not string path)
+        {
+            // If URL generation fails, the result could be null
+            return Results.NotFound($"Failed to find URL using route parts {routeParts}");
+        }
+
+        // Redirect the generated URL
+        return Results.Redirect(path);
     }
 
+    // Didn't match a known pattern, so redirect to the name "links" endpoint
     return Results.RedirectToRoute("links");
 });
 
