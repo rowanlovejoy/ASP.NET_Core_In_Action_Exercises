@@ -52,7 +52,7 @@ app.MapGet("links", (LinkGenerator linkGenerator) =>
     };
 }).WithName("links");
 
-// Use a catch all parameter to bind to the remainder of the URL after matching "redirect/", including any forward slashes that would otherwise delimit route parts
+// Use a catch-all parameter to bind to the remainder of the URL after matching "redirect/", including any forward slashes that would otherwise delimit route parts
 // {**<part_name>} preserves -- "round trips" -- forward slashes without URL encoding; {*<part_name>} URL encodes forward slashes
 app.MapGet("redirect/{**route}", (string route, LinkGenerator linkGenerator) =>
 {
