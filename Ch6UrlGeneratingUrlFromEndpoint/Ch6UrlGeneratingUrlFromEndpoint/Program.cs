@@ -1,5 +1,19 @@
 var builder = WebApplication.CreateBuilder(args);
+
+// Globally configure URL generation options used by LinkGenerator
+// All options default to false
+builder.Services.Configure<RouteOptions>(routeOptions =>
+{
+    routeOptions.LowercaseUrls = true;
+    routeOptions.AppendTrailingSlash = false;
+    routeOptions.LowercaseQueryStrings = false;
+});
+
 var app = builder.Build();
+
+// ASP.NET uses case-insensitive route template matching; "HealthCheck", "healthcheck", and "healthCheck", for example, will all match this endpoint
+app.MapGet("HealthCheck", () => Results.Ok()).WithName("healthcheck");
+
 
 app.MapGet("/product/{name}", (string name) =>
 {
@@ -24,7 +38,18 @@ app.MapGet("links", (LinkGenerator linkGenerator) =>
         // If re-using the request's host value, e.g., by taking it from an injected HttpContext, you must use host filtering on the web server (e.g., Kestrel) to defend against certain attacks
         new HostString("localhost"));
 
-    return new string[] { $"The relative URL is {relativeUrl}", $"The absolute URL is {absoluteUrl}" };
+    return new[]
+    {
+        relativeUrl,
+        absoluteUrl,
+        // Can override global RouteOptions for URL generation on a case-by-case basis
+        linkGenerator.GetPathByName("healthcheck", options: new()
+        {
+            LowercaseUrls = false,
+            AppendTrailingSlash = true
+        }),
+        linkGenerator.GetPathByName("product", new { name = "random" })
+    };
 }).WithName("links");
 
 // Use a catch all parameter to bind to the remainder of the URL after matching "redirect/", including any forward slashes that would otherwise delimit route parts
@@ -50,5 +75,6 @@ app.MapGet("redirect/{**route}", (string route, LinkGenerator linkGenerator) =>
     // Didn't match a known pattern, so redirect to the name "links" endpoint
     return Results.RedirectToRoute("links");
 });
+
 
 app.Run();
