@@ -3,7 +3,7 @@ var app = builder.Build();
 
 app.MapGet("/product/{name}", (string name) =>
 {
-    return $"The production is {name}";
+    return $"The product is {name}";
     // Give this endpoint a name, enabling it to be referenced for URL generation
     // Names are case sensitive and must be globally unique
 }).WithName("product");
@@ -25,6 +25,22 @@ app.MapGet("links", (LinkGenerator linkGenerator) =>
         new HostString("localhost"));
 
     return new string[] { $"The relative URL is {relativeUrl}", $"The absolute URL is {absoluteUrl}" };
+}).WithName("links");
+
+// Use a catch all parameter to bind to the remainder of the URL after matching "redirect/", including any forward slashes that would otherwise delimit route parts
+// {**<part_name>} preserves -- "round trips" -- forward slashes without URL encoding; {*<part_name>} URL encodes forward slashes
+app.MapGet("redirect/{**route}", (string route) =>
+{
+    var routeParts = route.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+    // Use a collection pattern to a match an array with exactly two elements where the first is product
+    if (routeParts is ["product", var name])
+    {
+        // Redirects to the named "product", passing in the retrieved product name
+        return Results.RedirectToRoute(routeParts[0], new { name });
+    }
+
+    return Results.RedirectToRoute("links");
 });
 
 app.Run();
