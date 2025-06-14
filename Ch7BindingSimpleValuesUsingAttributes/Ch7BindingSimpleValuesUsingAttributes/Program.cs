@@ -36,6 +36,8 @@ app.Run();
 // The example below explicitly implements the IParsable interface that includes a suitable TryParse method (and also Parse), but the interface isn't required; the type has only to have method with the right signature. The ASP.NET Core calls this method during model binding to create argument for the endpoint handler.
 // So, any type could, regardless of complexity, could be a simple type as long as it implements TryFormat in a compatible way
 // The example below demonstrates this with a strongly typed ID type: strings matching "p<number>", e.g., "p123" will be converted into ProductId instances with the number segment of the input string as the value of the Id property, e.g., "p123" will become ProductId { Id = 123 }
+// TryParse accepts a single string parameter from which to create the type; the upper-limit of complexity for a "simple type" is therefore the limit of what can be serialised as string and de-serialised in a TryParse method
+// A great deal can be serialised as a string -- see data URLs, for example -- so this limit is more practical than technical
 internal readonly record struct ProductId(int Id) : IParsable<ProductId>
 {
     public static ProductId Parse(string s, IFormatProvider? provider)
