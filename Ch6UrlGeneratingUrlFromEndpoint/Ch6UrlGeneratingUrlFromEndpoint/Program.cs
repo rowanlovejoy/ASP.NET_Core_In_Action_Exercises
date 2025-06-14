@@ -1,6 +1,6 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Globally configure URL generation options used by LinkGenerator
+// Globally configure URL generation options used by the LinkGenerator class
 // All options default to false
 builder.Services.Configure<RouteOptions>(routeOptions =>
 {
@@ -22,14 +22,14 @@ app.MapGet("/product/{name}", (string name) =>
     // Names are case sensitive and must be globally unique
 }).WithName("product");
 
-// Inject LinkGenerator into the endpoint via dependency injection. It's automatically registered with the dependency injection container
+// Inject a LinkGenerator instance into the endpoint via dependency injection. LinkGenerator automatically registered with the dependency injection container
 app.MapGet("links", (LinkGenerator linkGenerator) =>
 {
-    // Generate a URL to the named endpoint, substituting the route values for those provided
+    // Generate a URL for the named endpoint, substituting the route values for those provided
     // This method generates a relative URL, i.e., only the path; use GetUriByName to generate a full URL including scheme and host
     var relativeUrl = linkGenerator.GetPathByName("product",
         // name will be assigned to {name} in the route template
-        // If the route template doesn't include a route value name, the name argument here wil be appended as query parameter, e.g., ?name=relative-widget
+        // If the route template doesn't include a route value {name}, the name argument here wil be appended as query parameter, e.g., ?name=relative-widget
         new { name = "relative-widget" });
 
     var absoluteUrl = linkGenerator.GetUriByName("product", new { name = "absolute-width" },
@@ -38,6 +38,7 @@ app.MapGet("links", (LinkGenerator linkGenerator) =>
         // If re-using the request's host value, e.g., by taking it from an injected HttpContext, you must use host filtering on the web server (e.g., Kestrel) to defend against certain attacks
         new HostString("localhost"));
 
+    // Arrays return from endpoints get serialised as JSON by default
     return new[]
     {
         relativeUrl,
@@ -53,7 +54,7 @@ app.MapGet("links", (LinkGenerator linkGenerator) =>
 }).WithName("links");
 
 // Use a catch-all parameter to bind to the remainder of the URL after matching "redirect/", including any forward slashes that would otherwise delimit route parts
-// {**<part_name>} preserves -- "round trips" -- forward slashes without URL encoding; {*<part_name>} URL encodes forward slashes
+// {**<part_name>} preserves, i.e., "round trips", forward slashes without URL encoding; {*<part_name>} URL encodes forward slashes
 app.MapGet("redirect/{**route}", (string route, LinkGenerator linkGenerator) =>
 {
     var routeParts = route.Split('/', StringSplitOptions.RemoveEmptyEntries);
@@ -64,11 +65,11 @@ app.MapGet("redirect/{**route}", (string route, LinkGenerator linkGenerator) =>
         // Generate a URL to the "product" endpoint, passing in the retrieved product name
         if (linkGenerator.GetPathByName("product", new { name }) is not string path)
         {
-            // If URL generation fails, the result could be null
+            // If URL generation fails, the result will be null
             return Results.NotFound($"Failed to find URL using route parts {routeParts}");
         }
 
-        // Redirect the generated URL
+        // Redirect to the generated URL
         return Results.Redirect(path);
     }
 
