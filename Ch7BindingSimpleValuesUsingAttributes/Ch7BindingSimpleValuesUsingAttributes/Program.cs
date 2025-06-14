@@ -40,11 +40,21 @@ app.Run();
 // A great deal can be serialised as a string -- see data URLs, for example -- so this limit is more practical than technical
 internal readonly record struct ProductId(int Id) : IParsable<ProductId>
 {
-    public static ProductId Parse(string s, IFormatProvider? provider)
+    private static ProductId? ParseProductId(string? id)
     {
-        if (s is ['p', .. var numberSegment] && int.TryParse(numberSegment, out var idNumber))
+        if (id is ['p', .. var numberSegment] && int.TryParse(numberSegment, out var idNumber))
         {
             return new ProductId(idNumber);
+        }
+
+        return null;
+    }
+
+    public static ProductId Parse(string s, IFormatProvider? provider)
+    {
+        if (ParseProductId(s) is ProductId productId)
+        {
+            return productId;
         }
 
         throw new FormatException(s);
@@ -53,9 +63,9 @@ internal readonly record struct ProductId(int Id) : IParsable<ProductId>
     // If TryParse returns true during model binding, the resulting value will be passed to the matching parameter of the endpoint handler; if it returns false, an exception is thrown resulting in 400 Bad Request response
     public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out ProductId result)
     {
-        if (s is ['p', .. var numberSegment] && int.TryParse(numberSegment, out var idNumber))
+        if (ParseProductId(s) is ProductId productId)
         {
-            result = new ProductId(idNumber);
+            result = productId;
             return true;
         }
 
