@@ -7,7 +7,7 @@ var app = builder.Build();
 // By default, ASP.NET attempts to bind first from route parameters and second from query parameters
 app.MapGet("/products/{id:int}/paged", (
     // Can use [From*] attributes to override default binding sources, explicitly defining where an endpoint's parameter(s) should be sourced from
-    // These three attributes are the only parameter binding attributes that operator on "simple values", e.g., int, double
+    // These three attributes are the only parameter binding attributes that operate on "simple values", e.g., int, double, others (see below)
     // The book gives int and double as examples of simple types (see below)
     [FromRoute] int id,
     [FromQuery] int page,
@@ -32,11 +32,11 @@ app.MapGet("/products/{id}", (ProductId id) =>
 
 app.Run();
 
-// A simple type for the purposes of ASP.NET core model binding (are Razer Pages and MVC different?) is a type that implements the method "public static bool TryParse(string value, out T result)" or an overload that additionally takes an IFormatProvider as its second argument
-// The example below explicitly implements the IParsable interface that includes a suitable TryParse method (and also Parse), but the interface isn't required; the type has only to have method with the right signature. The ASP.NET Core calls this method during model binding to create argument for the endpoint handler.
-// So, any type could, regardless of complexity, could be a simple type as long as it implements TryFormat in a compatible way
-// The example below demonstrates this with a strongly typed ID type: strings matching "p<number>", e.g., "p123" will be converted into ProductId instances with the number segment of the input string as the value of the Id property, e.g., "p123" will become ProductId { Id = 123 }
-// TryParse accepts a single string parameter from which to create the type; the upper-limit of complexity for a "simple type" is therefore the limit of what can be serialised as string and de-serialised in a TryParse method
+// A simple type for the purposes of ASP.NET core model binding (are Razer Pages and MVC different?) is a type that implements the method "public static bool TryParse(string value, out T result)" or an overload of this method that additionally takes an IFormatProvider as its second argument
+// The example below explicitly implements the IParsable interface that includes a suitable TryParse method (and also Parse), but the interface isn't required; the type has only to have method with the right signature. ASP.NET Core calls this method during model binding to create the argument for the endpoint handler.
+// So, any type could, regardless of complexity, be a simple type as long as it implements TryFormat in a compatible way
+// The example below demonstrates this with a strongly typed ID type: strings matching "p<number>", e.g., "p123", will be converted into ProductId instances with the number segment of the input string as the value of the Id property, e.g., "p123" will become ProductId { Id = 123 }
+// TryParse accepts a single string parameter from which to create the type; the upper-limit of complexity for a "simple type" is therefore the limit of what can be serialised as a string and de-serialised in a TryParse method
 // A great deal can be serialised as a string -- see data URLs, for example -- so this limit is more practical than technical
 internal readonly record struct ProductId(int Id) : IParsable<ProductId>
 {
