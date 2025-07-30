@@ -7,7 +7,7 @@ var app = builder.Build();
 // By default, ASP.NET attempts to bind first from route parameters and second from query parameters
 app.MapGet("/products/{id:int}/paged", (
     // Can use [From*] attributes to override default binding sources, explicitly defining where an endpoint's parameter(s) should be sourced from
-    // These three attributes are the only parameter binding attributes that operate on "simple values", e.g., int, double, others (see below)
+    // These three attributes are the only parameter binding attributes that operate on "simple types", e.g., int, double, others (see below)
     // The book gives int and double as examples of simple types (see below)
     [FromRoute] int id,
     [FromQuery] int page,
