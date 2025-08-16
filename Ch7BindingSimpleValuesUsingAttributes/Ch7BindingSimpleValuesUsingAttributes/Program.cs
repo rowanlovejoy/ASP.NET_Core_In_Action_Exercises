@@ -30,6 +30,20 @@ app.MapGet("/products/{id}", (ProductId id) =>
     return $"The product ID is {id}";
 });
 
+// The framework will attempt bind first from the route, then from the query string. It will bind from a header only if directed by the presence of the FromHeader parameter
+// FromHeader can accept a header name to bind from; without this, it will apparently bind to a header with the same name as the parameter
+app.MapGet("/products/v2/{routeId}", (ProductId routeId, ProductId queryId, [FromHeader] ProductId headerId) =>
+{
+
+    return new Dictionary<string, string>()
+    {
+        { nameof(routeId), routeId },
+        { nameof(queryId), queryId },
+        { nameof(headerId), headerId }
+    };
+
+});
+
 app.Run();
 
 // A simple type for the purposes of ASP.NET core model binding (are Razer Pages and MVC different?) is a type that implements the method "public static bool TryParse(string value, out T result)" or an overload of this method that additionally takes an IFormatProvider as its second argument
@@ -77,5 +91,8 @@ internal readonly record struct ProductId(int Id) : IParsable<ProductId>
     {
         return Id.ToString();
     }
-}
 
+    // ToString() isn't invoked implicitly in the initializer for a dictionary, apparently; you have to define an implicit conversion.
+    // You have to call ToString(), even though there's no type error if you don't, because it fails at runtime otherwise
+    public static implicit operator string(ProductId productId) => productId.ToString();
+}
