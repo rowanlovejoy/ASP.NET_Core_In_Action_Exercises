@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +17,11 @@ var app = builder.Build();
 // Because Product is a complex type, it will be bound to the JSON body of the request
 // This behaviour is automatic; for simple types, use [FromBody] attribute to force binding to the body
 // Can also use [FromBody] to force binding body binding for request methods where a body usually isn't included -- GET, DELETE, HEAD, etc. -- though this is discouraged because it's unusual and counter to the HTTP spec
-app.MapPost("/product", (Product product) => $"Received {product}");
+app.MapPost("/product", (Product product) => $"Received body product {product}");
+
+// Uses [FromBody] to force binding a parameter -- e.g., a simple type -- to the request body  
+app.MapPost("/product/name", ([FromBody] string name) =>
+$"Received body name {name}");
 
 app.Run();
 
