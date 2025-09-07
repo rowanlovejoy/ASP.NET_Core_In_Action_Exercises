@@ -15,8 +15,10 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 var app = builder.Build();
 
 // Because Product is a complex type, it will be bound to the JSON body of the request
-// This behaviour is automatic; for simple types, use [FromBody] attribute to force binding to the body
+// This behaviour is automatic for complex types; for simple types, use [FromBody] attribute to force binding to the body
+// Only one parameter can be bound to the body; if there are multiple complex type parameters, an exception will occur at runtime
 // Can also use [FromBody] to force binding body binding for request methods where a body usually isn't included -- GET, DELETE, HEAD, etc. -- though this is discouraged because it's unusual and counter to the HTTP spec
+// This behaviour is JSON-specific; the endpoint won't run for requests with non-JSON bodies and a 415 (unsupported media type) response will be returned
 app.MapPost("/product", (Product product) => $"Received body product {product}");
 
 // Uses [FromBody] to force binding a parameter -- e.g., a simple type -- to the request body  
