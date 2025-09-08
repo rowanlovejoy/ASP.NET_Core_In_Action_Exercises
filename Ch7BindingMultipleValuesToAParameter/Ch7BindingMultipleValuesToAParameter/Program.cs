@@ -19,21 +19,29 @@ app.MapGet("/product/search/id", ([FromQuery(Name = "id")] ProductId[] ids) => $
 // For strings, StringValues can be used as the parameter type instead of string[] or a custom simple type
 // If a StringValues parameter is paired with a From* attribute, the compiler errors because StringValues, apparently, does not implement TryParse
 // This behaviour seems to make it impossible to override the name of the binding source when using StringValues
+// The book list StringValues as an example of a simple type, so this error is perplexing
 app.MapGet("/product/string", (StringValues id) => $"Received {id.Count} StringValue IDs from query: {string.Join(", ", [.. id])}");
 
 // It's not possible to have multiple route parameters with the same name, so it's not possible to bind multiple route values to the same parameter
 //app.MapGet("/product/search/{id}/{id}", ([FromRoute(Name = "id")] int[] ids) => $"Received {ids.Length} IDs: {string.Join(", ", ids)}");
 
+// For verbs where the framework assumes a body will be present -- e.g., POST -- the default binding source for array parameters will be the body instead of the query string or headers
+// Here, a body that is JSON array of numbers is expected
+app.MapPost("/product/search", (int[] id) => $"Received {id.Length} IDs from body: {string.Join(", ", id)}");
+
+// For verbs where the framework assumes a body will typically not be present -- e.g., GET -- and parameter is of a complex type -- i.e., it doesn't implement TryParse -- an exception will occur unless the FromBody attribute is used to force binding to the request body
+app.MapGet("/product/search/get", ([FromBody] Product[] products) => $"Received {products.Length} IDs from body: {string.Join<Product>(", ", products)}");
+
 app.Run();
 
 internal record struct ProductId(string Id) : IParsable<ProductId>
 {
-    private static string Parse(string? Id)
+    private static string? Parse(string? Id)
     {
         return Id switch
         {
             ['p', .. var rest] => rest,
-            _ => string.Empty
+            _ => null
         };
     }
 
@@ -59,3 +67,5 @@ internal record struct ProductId(string Id) : IParsable<ProductId>
         return false;
     }
 }
+
+internal record Product(string Id, string Name);
