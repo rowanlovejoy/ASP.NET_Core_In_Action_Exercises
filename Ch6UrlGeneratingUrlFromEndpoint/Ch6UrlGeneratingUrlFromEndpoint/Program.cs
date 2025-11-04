@@ -22,7 +22,8 @@ app.MapGet("/product/{name}", (string name) =>
     // Names are case sensitive and must be globally unique
 }).WithName("product");
 
-// Inject a LinkGenerator instance into the endpoint via dependency injection. LinkGenerator automatically registered with the dependency injection container
+// Inject a LinkGenerator instance into the endpoint via dependency injection (DI). LinkGenerator automatically registered with the dependency injection container.
+// The LinkGenerator parameter could be decorated with the [FromServices] attribute to explicitly instruct the framework to retrieve the injected instance from the DI container. This often isn't necessary as the framework can usually identify a service that's available in DI without the attribute.
 app.MapGet("links", (LinkGenerator linkGenerator) =>
 {
     // Generate a URL for the named endpoint, substituting the route values for those provided
