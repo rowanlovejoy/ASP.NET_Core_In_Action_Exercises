@@ -1,0 +1,24 @@
+meta {
+  name: users
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:5106/users
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "firstName": "Rowan",
+    "lastName": "Lovejoy",
+    "email": "rlovejoy@tutanota.com"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
