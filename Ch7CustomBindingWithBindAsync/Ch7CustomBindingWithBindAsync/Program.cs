@@ -8,6 +8,15 @@ app.MapPost("/size", (SizeDetails size) => $"Size: {size}");
 
 app.Run();
 
+// When using minimal APIs, there is a fixed sequence in which possible bind sources for parameters are checked
+// 1. The source designated by the parameter's attribute, e.g., FromBody
+// 2. The relevant property of HttpContext if the parameter is a well-known type, e.g., HttRequest binds to HttpContext.Request
+// 3. The result of BindAsync if the parameter's type implements it
+// 4. For simple types (strings, types implementing TryParse), the identically named route parameter if it exists, or the query string
+// 5. For string[] or StringValue parameters, if the HTTP verb suggests no request body (e.g., GET), the query string
+// 6. The dependency injection container if the type is a known service type registered in the container
+// 7. The request body deserialized from JSON
+
 // It's possibly to create a custom type bound to HttpContext, either in whole or in part.
 // To implement the binding, the custom type must contain one of two BindAsync overloads. The example below uses the more complex of the two methods; it includes a second parameter useful for obtaining details about the endpoint parameter being bound. The simpler overload has only an HttpContext parameter. At minimum, only the simpler of two overloads is required.
 // Having one of these two overloads defined is enough. The IBindableFromHttpContext<T> interface formalises this requirement, specifying the implementing type must have the second, more complex of the two overloads that additionally accepts a ParameterInfo argument.
