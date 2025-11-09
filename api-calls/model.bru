@@ -1,0 +1,25 @@
+meta {
+  name: model
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:5276/category/2/52?page=1&q=green
+  body: none
+  auth: inherit
+}
+
+params:query {
+  page: 1
+  q: green
+}
+
+headers {
+  sort: true
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
