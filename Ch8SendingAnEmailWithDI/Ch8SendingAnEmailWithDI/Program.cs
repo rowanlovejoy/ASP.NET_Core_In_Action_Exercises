@@ -1,72 +1,65 @@
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEmailSender();
+
 var app = builder.Build();
 
 app.MapGet("/register/{username}", RegisterUser);
 
 app.Run();
 
-string RegisterUser(string username)
+string RegisterUser(string username, IEmailSender emailSender)
 {
-    var emailSender = new EmailSender(
-        new NetworkClient(
-            new EmailServerSettings(
-                host: "localhost",
-                port: 80)),
-        new MessageFactory());
     emailSender.SendEmail(username);
     return $"Email sent to {username}";
 }
 
-internal class EmailSender
+internal interface IEmailSender
 {
-    private readonly NetworkClient networkClient;
-    private readonly MessageFactory messageFactory;
+    void SendEmail(string username);
+}
 
-    public EmailSender(NetworkClient networkClient, MessageFactory messageFactory)
-    {
-        this.networkClient = networkClient;
-        this.messageFactory = messageFactory;
-    }
-
+internal class EmailSender(NetworkClient networkClient, MessageFactory messageFactory) : IEmailSender
+{
     public void SendEmail(string username)
     {
         var email = messageFactory.Create();
-        this.networkClient.Send(email);
+        networkClient.Send(email);
         Console.WriteLine($"Sent email to {username}");
     }
 }
 
-internal class NetworkClient
+internal class NetworkClient(EmailServerSettings serverSettings)
 {
-    private readonly EmailServerSettings serverSettings;
-
-    public NetworkClient(EmailServerSettings serverSettings)
-    {
-        this.serverSettings = serverSettings;
-    }
-
     internal void Send(object email)
     {
-        Console.WriteLine($"Sent email: {email}");
+        Console.WriteLine($"Sent email {email} using {serverSettings}");
     }
 }
 
-public class EmailServerSettings
-{
-    public EmailServerSettings(string host, int port)
-    {
-        Host = host;
-        Port = port;
-    }
+public record EmailServerSettings(string Host, int Port);
 
-    public string Host { get; }
-    public int Port { get; }
-}
 
 internal class MessageFactory
 {
     internal object Create()
     {
         return "Created message";
+    }
+}
+
+public static class EmailSenderServiceCollectionExtensions
+{
+    public static IServiceCollection AddEmailSender(this IServiceCollection services)
+    {
+        services.AddScoped<IEmailSender, EmailSender>();
+        services.AddScoped<NetworkClient>();
+        services.AddSingleton<MessageFactory>();
+        services.AddScoped(provider =>
+        {
+            return new EmailServerSettings(Host: "smtp.server.com", Port: 1025);
+        });
+
+        return services;
     }
 }
