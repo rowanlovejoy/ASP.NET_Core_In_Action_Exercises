@@ -1,13 +1,13 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// If there are multiple implememtations of a service, it's possible to each inject an instance of each in a single parameter.
-// Each implenetation of the service -- defined by some kind of base type, class or interface, in this case IMessageSender -- must be registered with the DI container, as individual services would be.
+// If there are multiple implementations of a service, it's possible to each inject an instance of each in a single parameter.
+// Each implementation of the service -- defined by some kind of base type, class or interface, in this case IMessageSender -- must be registered with the DI container, as individual services would be.
 builder.Services.AddScoped<IMessageSender, EmailSender>();
 builder.Services.AddScoped<IMessageSender, SmsSender>();
 builder.Services.AddScoped<IMessageSender, DiscordSender>();
 
 // To have multiple implementations of a service, multiple implementations of the same interface or base class are required.
-// In this example, the service is defined by non-abstract a class; this base includes an implementation itself (hence its appearence in both the service and implememtation generic parameters), and I'm also registering its two derived classes as is implementations.
+// In this example, the service is defined by non-abstract a class; this base includes an implementation itself (hence its appearance in both the service and implementation generic parameters), and I'm also registering its two derived classes as is implementations.
 builder.Services.AddScoped<ColourPrinter, ColourPrinter>();
 builder.Services.AddScoped<ColourPrinter, InkjetPrinter>();
 builder.Services.AddScoped<ColourPrinter, LaserPrinter>();
@@ -20,7 +20,7 @@ app.MapGet("/print/{message}", PrintMessage);
 app.Run();
 
 // To inject an instance of each service implementation in an endpoint handler, the handler must accept a parameter of IEnumerable<T>, where T is the type defining the service.
-// The DI container will inject an argument to this parameter that is an array of T (T[]), containing one item for each registered implementati of the service, in the same order in which they were registered with the DI container, i.e., the first implementation registered will have its instance in the first slot of the array.
+// The DI container will inject an argument to this parameter that is an array of T (T[]), containing one item for each registered implementation of the service, in the same order in which they were registered with the DI container, i.e., the first implementation registered will have its instance in the first slot of the array.
 string RegisterUser(string username, IEnumerable<IMessageSender> senders)
 {
     // Actions can be performed with the injected implementations by simply looping over them, e.g., with a foreach loop.
