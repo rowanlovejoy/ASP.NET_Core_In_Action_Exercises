@@ -15,6 +15,7 @@ builder.Services.AddScoped<ColourPrinter, LaserPrinter>();
 var app = builder.Build();
 
 app.MapGet("/register/{username}", RegisterUser);
+app.MapGet("/register/2/{username}", RegisterUser2);
 app.MapGet("/print/{message}", PrintMessage);
 
 app.Run();
@@ -28,6 +29,15 @@ string RegisterUser(string username, IEnumerable<IMessageSender> senders)
     {
         sender.SendMessage($"Welcome {username}");
     }
+
+    return $"Welcome message sent to {username}";
+}
+
+// If multiple implementations of a service are registered, but an injection site, such as an endpoint handler, requires only a single instance, the last implementation registered will be the instance in injected.
+// This endpoint handler requires a single instance of the IMessageSender service; as DiscordSender was the last implementation of the IMessageSender service to be registered, an instance of this implementation will be injected.
+string RegisterUser2(string username, IMessageSender sender)
+{
+    sender.SendMessage(username);
 
     return $"Welcome message sent to {username}";
 }
