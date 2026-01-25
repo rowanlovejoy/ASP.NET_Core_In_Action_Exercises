@@ -2,7 +2,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ASP.NET is able to load settings (key-value pairs that affect the running program) from a range of sources, including files of different types, environment variables, and command line arguments.
 // Once read from a source, a setting's value can be retrieved by referencing its key, e.g., given a source the reads from the JSON file with contents { "my-key": "my-value" }, the key would be "my-key", and the value of setting retrieved by referencing the key would "my-value".
-// Regardless of the type of the value in the original configuration source, e.g., a JSON number value, ASP.NET will read and store the setting's value as a string. (Is storing the value as a string required by the framework, or is it provider-specific?)
+// Regardless of the type of the value in the original configuration source, e.g., a JSON number value, the provider will read and store the setting's value as a string. (The book states it's the provider that does this; is it a behaviour required by the base type? Could I write a provider that does respect the original source type?)
 // The framework's configuration system is extensible: new configuration sources -- a file or something that can provide key-value pairs can be read in -- can implemented by users -- the book author has created a YAML configuration provider, for example.
 // The configuration system includes three main interfaces: IConfigurationSource, IConfigurationBuilder, and IConfigurationRoot.
 // IConfigurationSource describes a source of settings and how to read from it -- for example, an IConfigurationSource implementation might describe how to settings from a JSON file.
@@ -47,7 +47,7 @@ app.MapGet("/location", (IConfiguration configuration) =>
     // For hierarchical data like JSON object trees, nested sections can be retrieved instead of individual values; doing so "resets the namespace" (as the book puts it), enable values nested within the retrieved section to themselves be retrieved using shorter paths.
     // The following lines retrieve MapSettings:DefaultLocation setting and access the Latitude and Longitude values from it; when access these values, because the section is now the root, the paths can be shorter. 
     var locationSection = configuration.GetSection("MapSettings:DefaultLocation");
-    // In the appsetings.json file, these latitude and longitude values are assigned to the keys "Longitude" and "Latitude" respectively, with uppercase Ls. In the two following lines, these values are retrieved using the keys "longitude" and "latitude", with lowercase Ls. When accessing values from ICOnfiguration, keys are case-insensitive.
+    // In the appsetings.json file, these latitude and longitude values are assigned to the keys "Longitude" and "Latitude" respectively, with uppercase Ls. In the two following lines, these values are retrieved using the keys "longitude" and "latitude", with lowercase Ls. When accessing values from IConfiguration, keys are case-insensitive.
     var latitude = locationSection["latitude"];
     var longitude = locationSection["longitude"];
     return $"""
