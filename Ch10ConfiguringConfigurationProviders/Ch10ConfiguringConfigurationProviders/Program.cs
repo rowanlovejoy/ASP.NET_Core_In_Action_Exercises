@@ -44,7 +44,8 @@ app.MapGet("/zoom", (IConfiguration configuration) =>
 
 app.MapGet("/location", (IConfiguration configuration) =>
 {
-    // For hierarchical data like JSON object trees, nested sections can be retrieved instead of individual values; doing so "resets the namespace" (as the book puts it), enable values nested within the retrieved section to themselves be retrieved using shorter paths.
+    // For hierarchical data like JSON object trees, nested sections can be retrieved instead of individual values; doing so "resets the namespace" (as the book puts it), enabling values nested within the retrieved section to themselves be retrieved using shorter paths.
+    // Retrieving a section returns an IConfigurationSection instance, which extends IConfiguration; the API for accessing values from the section therefore does not change compared to reading from the configuration root (the injected IConfiguration service).
     // The following lines retrieve MapSettings:DefaultLocation setting and access the Latitude and Longitude values from it; when access these values, because the section is now the root, the paths can be shorter. 
     var locationSection = configuration.GetSection("MapSettings:DefaultLocation");
     // In the appsetings.json file, these latitude and longitude values are assigned to the keys "Longitude" and "Latitude" respectively, with uppercase Ls. In the two following lines, these values are retrieved using the keys "longitude" and "latitude", with lowercase Ls. When accessing values from IConfiguration, keys are case-insensitive.
