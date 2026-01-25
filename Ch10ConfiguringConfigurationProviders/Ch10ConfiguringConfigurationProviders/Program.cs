@@ -17,11 +17,24 @@ var builder = WebApplication.CreateBuilder(args);
 // From ASP.NET 6 onwards, ConfigurationManager fulfils both, automatically reading settings from sources registered with it and making them available to the appliation code.
 
 // WebApplicationBuilder automatically registers several configuration providers (IConfigurationProvider implementations) by default; these support loading settings from appsettings.json and environment-specific variations thereof, secrets, environment variables, .ini files, and command line arguments.
+// The order in which providers are registered with the ConfigurationManager determines the order in which settings are read from them -- first provider registered is read from first, and the last provider last.
+// If same setting -- the same key-value pair -- is defined by multiple configuration sources, sources read later overwrite sources read earlier.
+// The default providers are configured such that their priority isn't strictly linear, i.e., the last provider read always wins out: command-line arguments are registered twice, once at the beginning and at the end; certain environment variables have higher priority than others and from settings from other providers. See https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-10.0#default-app-configuration-sources
 // The default providers can be un-registered by calling the .Clear() method on the list configuration sources (theses sources have the IConfigurationSource interface; where does IConfigurationProvider come into this?)
 // The following two lines un-register the default configuration sources and the register a JSON file named appsettings.json as an optional source. Making the source optional enables the app to start even if this file cannot be read; otherwise, an exception would be thrown if the file could not be read.
 builder.Configuration.Sources.Clear();
+// All default providers have been un-registerd using .Clear(); the order of the following registrations determine the exact order in which configuration sources will be read from and their priority.
+// The sharedsettings.json configuration provider is registered first and therefore has the lowest priority; any future provider that provides a setting with the same key as its definition of that setting
+builder.Configuration.AddJsonFile("sharedsettings.json", optional: true);
+// The appsettings.json configuration provider is registered second and therefore has higher priority than sharedsettings.json; settings defined in appsettings.json will overwrite settings with the same keys in sharedsettings.json.
 builder.Configuration.AddJsonFile("appsettings.json", optional: true);
-builder.Configuration.AddYamlFile("appsettings.yml", optional: true);
+// The environment variables configuration provider is registered last and therefore has the highest priority of the three registered providers; any settings defined as environment variables will overwrite those with the same keys read from sharedsettings.json and appsettings.json.
+// appsettings.json defines the setting MyAppConnectionString, and this project has the environment MyAppConnectionString defined in its launchSettings.json (this variable will be added to the environment on start-up).
+// Because the environment variables configuration source is added last, it has the highest priority. Therefore, only the environment variable MyAppConnectionString will be incorporated into the final set of configuration values; it overwrites the identically named setting in appsettings.json.
+builder.Configuration.AddEnvironmentVariables();
+
+// See comments /yaml endpoint handler below.
+//builder.Configuration.AddYamlFile("appsettings.yml", optional: true);
 
 var app = builder.Build();
 
