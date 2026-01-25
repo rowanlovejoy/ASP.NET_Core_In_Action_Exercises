@@ -1,0 +1,28 @@
+{
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5239"
+    },
+    "https": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "MySecret": "Hello",
+        "DemoMySecret": "See ya",
+        "SpecialDemoMySecret": "Hello again",
+        "MySection__MyName": "John",
+        "MySection__MyColour": "Red"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7173;http://localhost:5239"
+    }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json"
+}
