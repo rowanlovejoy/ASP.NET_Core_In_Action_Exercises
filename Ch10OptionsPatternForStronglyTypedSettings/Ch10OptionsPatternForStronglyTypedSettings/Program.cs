@@ -11,6 +11,15 @@ builder.Services.Configure<MapSettings>(builder.Configuration.GetSection(nameof(
 builder.Services.Configure<AppDisplaySettings>(builder.Configuration.GetSection(nameof(AppDisplaySettings)));
 // Accessing configuration using the IOptions<T> interface facilitates testing, as it enables configuration classes in the DI container to be easily replaced with mocks by registering a different implementation.
 
+// Instead of injecting an instance of IOptions<T> and accessing the T POCO using its .Value property, the POCO itself can be registered as a service and directly injected.
+// This enables slightly cleaner parameter declarations and improves the ergonomics of reading the POCO's properties; the parameter type can be the bare POCO type -- no more wrapping in IOptions -- and because the injected value is the POCO, its properties can be read directly instead of via .Value property on IOptions<T>. When developing libraries, there may also be reasons to avoid depending on IOptions<T> if consumers are no guaranteed to be ASP.NET applications -- see https://andrewlock.net/adding-validation-to-strongly-typed-configuration-objects-in-dotnet-6/#avoiding-the-ioptions-dependency
+// There are multiple ways to achieve this. The following line is the most straightforward and registers the POCO as a service alongside the IOptions<T> service; both can be injected using DI.
+// This method relies on first registering the IOptions<T> service using IServiceCollection.Configure(). Inside the factory function -- called by the framework whenever it needs to create an instance of this service -- it retrieves this services using .GetRequiredService() and then directly access its .Value property; it then registered the value of that property -- the POCO -- as a singleton lifetime service.
+builder.Services.AddScoped(provider => provider.GetRequiredService<IOptions<AppDisplaySettings>>().Value);
+// The book reads that when using this approach of directly injecting the POCO, changes to the underlying configuration source won't be reflected in the POCO. But this technique of registering the POCO as a singleton and requiring an IOptionsSnapshot<T> instead of IOptions<T> achieves exactly this. IOptionsSnapshot<AppDisplaySettings> re-binds to the configuration on creation, and its created a new for each scope -- i.e., each request. AppDisplaySettings is also registered with a scoped lifetime, so it will also be recreated for each scope. The factory function in this example creates AppDisplaySettings by injecting an IOptionsSnapshot<AppDisplaySettings> instance and reading its current value. Injecting it will created a new instance with the latest configuration settings bound; the POCO object they're bound to will then injected where it is being required.
+// Could it be that this didn't work in ASP.NET 7? Why would this be?
+builder.Services.AddScoped(provider => provider.GetRequiredService<IOptionsSnapshot<AppDisplaySettings>>().Value);
+
 var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
@@ -40,6 +49,11 @@ app.MapGet("/display-settings", (IOptions<AppDisplaySettings> displaySettings) =
 app.MapGet("/map-snapshot", (IOptionsSnapshot<MapSettings> mapSettings) =>
 {
     return mapSettings.Value;
+});
+
+app.MapGet("/display-settings-direct", (AppDisplaySettings displaySettings) =>
+{
+    return displaySettings;
 });
 
 app.Run();
