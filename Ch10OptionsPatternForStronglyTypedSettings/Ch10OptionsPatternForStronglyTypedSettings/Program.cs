@@ -56,6 +56,8 @@ internal class MapSettings
     // It will attempt to bind the DefaultZoomLevel property below to a setting named "DefaultZoomLevel" (key binding is case insensitive) nested immediately inside the configuration section with the key "MapSettings" (again, matching case insensitively).
     // The framework will attempt to convert the value of the setting to the type of the property it is attempting to bind it to, and throw an error if it cannot do so, e.g., when attempting to convert the string "apple" to a int.
     // If no matching configuration setting is found, the property will have the default value for its type or the value returned by its property initialiser. For the DefaultZoomLevel property, if no "DefaultZoomLevel" key exists in the expected location of the configuration, the property in the instantiated POCO have the value 5 provided by its initialiser.
+    // Validation during binding is supported: it uses data annotations on the POCO classes and required a different method of registering the bound class with the DI container. See https://andrewlock.net/adding-validation-to-strongly-typed-configuration-objects-in-dotnet-6/
+    // Validation of settings during binding is mentioned by the book in note, and the above article linked to -- but why isn't this a section in the book? The validation as introduced in ASP.NET 6; the book is about 7.
     public int DefaultZoomLevel { get; init; } = 5;
 
     // The POCO type can itself contain a property that binds to a nested configuration section.
