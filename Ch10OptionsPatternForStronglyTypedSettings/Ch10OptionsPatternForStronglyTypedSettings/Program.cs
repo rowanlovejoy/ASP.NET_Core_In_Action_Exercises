@@ -17,7 +17,7 @@ app.MapGet("/", () => "Hello World!");
 
 // Once registered, the required instance of the IOptions service can be retrieved via dependency injection by adding a parameter of type IOptions<T>, where T is the POCO bound to configuration section you want to access.
 // Binding to specified configuration section happens at the point of injection by the DI container, not at the point of registration with the DI container. Therefore, if there is a binding error between the MapSettings class and the "MapSettings" configuration section, it will surface only when this endpoint is called.
-// Snice IOptons<T> is registered with the singleton lifetime, once it's been injected once, it won't be created and bound again.
+// Snice IOptions<T> is registered with the singleton lifetime, once it's been injected once, it won't be created and bound again.
 app.MapGet("/map-settings", (IOptions<MapSettings> mapSettings) =>
 {
     // Access the .Value property to retrieve the bound POCO.
@@ -30,6 +30,16 @@ app.MapGet("/display-settings", (IOptions<AppDisplaySettings> displaySettings) =
     var showCopyright = displaySettings.Value.ShowCopyright;
 
     return new { title, showCopyright };
+});
+
+// IOptions<T> is registered with the singleton lifetime; binding happens on first injection and thereafter the same instance -- with the same bound values -- is reused.
+// When calling IServiceCollection.Configure() to bind a configuration section to a POCO, T, an additional service is registered alongside IOptions<T>: IOptionsSnapshot<T>.
+// IOptionsSnapshot<T> similarly provides access to a bound POCO on its .Value property; the difference is that it's registered with scoped lifetime, and its POCO, T, is rebound every time it is injected.
+// In the following example, a different instance of IOptionsSnapshot will be created for every request. If the settings in the "MapSettings" section change between two requests, the changes will be reflected in .Value property of the IOptionsSnapshot<MapSettings> bound and injected for the second request.
+// The book makes it unclear when rebinding occurs when using IOptionsSnapshot<T>. It first reads that a new instance will be created "when needed", but goes on to point out performance implications of rebinding with every request. This first point implies some additional logic beyond the behaviour of the scoped lifetime: a new service instance will always be injected, but binding only occurs "as needed", i.e., when the underlying configuration source, e.g., an appsettings.json file, has been changed. The second point instead implies no such behaviour: binding be performed whenever a new instance is created and developers should be alert to performance problems this might cause. According to the official Microsoft docs, the behaviour implied by the second point is the truth of the situation.
+app.MapGet("/map-snapshot", (IOptionsSnapshot<MapSettings> mapSettings) =>
+{
+    return mapSettings.Value;
 });
 
 app.Run();
