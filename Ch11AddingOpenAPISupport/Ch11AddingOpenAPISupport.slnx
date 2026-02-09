@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Ch11AddingOpenAPISupport/Ch11AddingOpenAPISupport.csproj" />
+  <Project Path="Ch11ApiConsumingConsoleApp/Ch11ApiConsumingConsoleApp.csproj" Id="6297a052-63ed-45f0-b2e1-cb1d997c29b4" />
+</Solution>
