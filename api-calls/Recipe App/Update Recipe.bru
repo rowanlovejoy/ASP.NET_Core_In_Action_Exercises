@@ -1,0 +1,32 @@
+meta {
+  name: Update Recipe
+  type: http
+  seq: 3
+}
+
+put {
+  url: http://localhost:5144/recipe
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "id": 1,
+    "name": "Non-vegetarian apple pie",
+    "timeToCookHours": 2,
+    "timeToCookMinutes": 10,
+    "ingredients": [
+      {
+        "name": "apple",
+        "quantity": 5,
+        "unit": "whole"
+      }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

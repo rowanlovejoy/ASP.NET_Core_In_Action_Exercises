@@ -1,0 +1,34 @@
+meta {
+  name: Create Recipe
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:5144/recipe
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Apple Pie",
+    "timeToCookHours": 2,
+    "timeToCookMinutes": 25,
+    "method": "oven bake",
+    "isVegetarian": true,
+    "isVegan": false,
+    "ingredients": [
+      {
+        "name": "Apple",
+        "quantity": 5,
+        "unit": "whole apple"
+      }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
